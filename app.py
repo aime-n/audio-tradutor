@@ -1,117 +1,70 @@
-"""
-    Streamlit App: Improved Audio Transcription & Translation
-
-    This app uploads an English audio file, transcribes the entire audio using Whisper
-    with adjusted decoding options (e.g., temperature=0.0 and beam search), performs simple
-    post-processing to remove duplicate phrases, and then translates the transcription to
-    Portuguese using googletrans.
-
-    Key Adjustments:
-    1. **Decoding Options**:
-       - Set temperature=0.0 and use beam search (beam_size=5) to reduce randomness.
-    2. **Post-Processing**:
-       - Split the transcription into sentences and remove consecutive duplicates.
-"""
-
 import streamlit as st
 import tempfile
 import whisper
-import librosa
-import numpy as np
+import ffmpeg
+import torch
 from googletrans import Translator
+import subprocess
 
-def load_audio_no_ffmpeg(file_path: str, sr: int = 16000) -> np.ndarray:
-    """
-    Loads an audio file using librosa without relying on ffmpeg.
-    
-    Args:
-        file_path (str): Path to the audio file.
-        sr (int): Target sample rate.
-    
-    Returns:
-        np.ndarray: Mono audio time series.
-    """
-    audio, _ = librosa.load(file_path, sr=sr, mono=True)
-    return audio
+# Verifica se ffmpeg está instalado
+def check_ffmpeg():
+    try:
+        subprocess.run(["ffmpeg", "-version"], capture_output=True, text=True, check=True)
+        return True
+    except subprocess.CalledProcessError:
+        return False
 
-def transcribe_full_audio(model, audio_path: str, language: str = "en") -> str:
+# Função para converter áudio usando ffmpeg
+def convert_audio_ffmpeg(input_path: str, output_path: str):
     """
-    Transcribes the full audio by splitting it into 30-second chunks,
-    decoding each with Whisper using stricter decoding options, and concatenating the results.
-    
-    Args:
-        model: Loaded Whisper model.
-        audio_path (str): Path to the audio file.
-        language (str): Language code of the audio.
-    
-    Returns:
-        str: Combined transcription.
+    Converte um arquivo de áudio para formato WAV com 16kHz usando ffmpeg.
     """
-    # Load full audio
-    audio = load_audio_no_ffmpeg(audio_path, sr=16000)
-    
-    # Define chunk size: 30 seconds of audio at 16kHz
-    chunk_size = 30 * 16000
-    chunks = [audio[i:i + chunk_size] for i in range(0, len(audio), chunk_size)]
-    
-    full_transcription = []
-    for chunk in chunks:
-        # Pad or trim the chunk to the required length
-        chunk = whisper.pad_or_trim(chunk)
-        # Compute the log-Mel spectrogram
-        mel = whisper.log_mel_spectrogram(chunk).to(model.device)
-        # Use stricter decoding parameters to reduce errors:
-        options = whisper.DecodingOptions(
-            language=language,
-            fp16=False,
-            temperature=0.0,  # less randomness
-            beam_size=5      # beam search for better results
-        )
-        result = whisper.decode(model, mel, options)
-        full_transcription.append(result.text.strip())
-    
-    # Concatenate all chunk transcriptions
-    transcription = " ".join(full_transcription)
-    
-    # Post-processing: Remove consecutive duplicate sentences
-    sentences = transcription.split('. ')
-    filtered_sentences = []
-    for s in sentences:
-        s = s.strip()
-        if not filtered_sentences or s.lower() != filtered_sentences[-1].lower():
-            filtered_sentences.append(s)
-    return '. '.join(filtered_sentences)
+    command = [
+        "ffmpeg", "-i", input_path,  # Entrada
+        "-ac", "1", "-ar", "16000",  # Mono e 16kHz
+        "-y", output_path  # Sobrescreve o arquivo de saída
+    ]
+    subprocess.run(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+# Função para transcrição com Whisper
+def transcribe_audio(model, audio_path: str, language: str = "en") -> str:
+    """
+    Transcreve o áudio usando Whisper.
+    """
+    result = model.transcribe(audio_path, language=language)
+    return result["text"].strip()
 
 def main():
-    st.title("Transcrição e tradução de áudio")
-    # st.write("Carregue um arquivo de áudio em inglês para transcrever e traduzir para o português.")
-    
-    audio_file = st.file_uploader("Arraste e solte um arquivo de áudio ou clique para procurar", type=["wav", "mp3", "m4a"])
+    st.title("🎙️ Transcrição e Tradução de Áudio")
+    st.write("Faça upload de um áudio em inglês para transcrição e tradução para português.")
 
+    audio_file = st.file_uploader("📂 Arraste e solte ou selecione um arquivo", type=["wav", "mp3", "m4a"])
 
     if audio_file is not None:
-        # Save the uploaded file to a temporary file
-        with tempfile.NamedTemporaryFile(delete=False) as tmp:
-            tmp.write(audio_file.read())
-            tmp_path = tmp.name
-        
-        with st.spinner("Processando audio..."):
-            # Load Whisper model
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".wav") as tmp_audio:
+            tmp_audio.write(audio_file.read())
+            tmp_path = tmp_audio.name
+
+        with st.spinner("🔄 Convertendo áudio..."):
+            converted_path = tmp_path.replace(".wav", "_converted.wav")
+            convert_audio_ffmpeg(tmp_path, converted_path)
+
+        with st.spinner("📝 Transcrevendo áudio..."):
             model = whisper.load_model("base")
-            # Transcribe the full audio with improved settings
-            transcription = transcribe_full_audio(model, tmp_path, language="en")
-            
-            # Translate the transcription to Portuguese
+            transcription = transcribe_audio(model, converted_path, language="en")
+
+        with st.spinner("🌍 Traduzindo para português..."):
             translator = Translator()
             translation = translator.translate(transcription, dest='pt').text
 
-        st.subheader("Tradução (Português):")
+        st.subheader("📝 Transcrição (Inglês):")
+        st.write(transcription)
+
+        st.subheader("🇧🇷 Tradução (Português):")
         st.write(translation)
 
-        st.subheader("Transcrição (Inglês):")
-        st.write(transcription)
-        
-
-
 if __name__ == "__main__":
-    main()
+    if not check_ffmpeg():
+        st.error("🚨 FFmpeg não está instalado corretamente!")
+    else:
+        main()
