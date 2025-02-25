@@ -1,4 +1,3 @@
-```markdown
 # Transcrição e Tradução de Áudio com Streamlit
 
 Esta aplicação permite que o usuário envie um arquivo de áudio em inglês, realize a transcrição completa do áudio utilizando o modelo Whisper e traduza o resultado para o português. Todas as interações na interface são apresentadas em português.
@@ -80,4 +79,3 @@ Este projeto está licenciado sob a licença MIT.
 
 Em caso de dúvidas ou sugestões, entre em contato:
 - Email: [aime.nobrega@gmail.com](mailto:aime.nobrega@gmail.com)
-```
