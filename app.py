@@ -57,11 +57,12 @@ def main():
             translator = Translator()
             translation = translator.translate(transcription, dest='pt').text
 
+        st.subheader("🇧🇷 Tradução (Português):")
+        st.write(translation)
+
         st.subheader("📝 Transcrição (Inglês):")
         st.write(transcription)
 
-        st.subheader("🇧🇷 Tradução (Português):")
-        st.write(translation)
 
 if __name__ == "__main__":
     if not check_ffmpeg():
