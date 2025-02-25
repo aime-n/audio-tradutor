@@ -1,5 +1,5 @@
 streamlit
-openai-whisper
+whisper
+torch
+ffmpeg-python
 googletrans==4.0.0-rc1
-numpy
-librosa
