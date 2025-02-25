@@ -1,81 +1,93 @@
-# Transcrição e Tradução de Áudio com Streamlit
+# Audio Transcription & Translation App
 
-Esta aplicação permite que o usuário envie um arquivo de áudio em inglês, realize a transcrição completa do áudio utilizando o modelo Whisper e traduza o resultado para o português. Todas as interações na interface são apresentadas em português.
+## Overview
+This Streamlit application allows users to upload an English audio file, transcribe it using OpenAI's Whisper model, and translate the transcription into Portuguese using Google Translate.
 
-## Recursos
+## Features
+- **Audio Upload**: Supports WAV, MP3, and M4A files.
+- **Transcription**: Uses Whisper for high-accuracy speech-to-text conversion.
+- **Translation**: Automatically translates English transcriptions to Portuguese.
+- **FFmpeg Support**: Ensures compatibility with various audio formats.
 
-- **Upload de Áudio**: Arraste e solte um arquivo de áudio ou clique para procurar (formatos suportados: WAV, MP3, M4A).
-- **Transcrição Completa**: O áudio é dividido em blocos de 30 segundos para garantir a transcrição completa, utilizando configurações aprimoradas (beam search, temperatura zero) para melhorar a precisão.
-- **Tradução Automática**: A transcrição em inglês é traduzida automaticamente para o português usando o `googletrans`.
-- **Interface em Português**: Todas as mensagens e botões são exibidos em português para facilitar o uso.
+## Installation
+Ensure you have Python installed (recommended: Python 3.8+). Then, install the required dependencies:
 
-## Pré-Requisitos
+```sh
+pip install -r requirements.txt
+```
 
-- **Python 3.7+**
-- **Bibliotecas Python**:
-  - streamlit
-  - whisper
-  - librosa
-  - numpy
-  - googletrans==4.0.0rc1 (ou versão compatível)
+## Running the Application
+Run the Streamlit app using:
 
-> **Observação**: Caso seu áudio não esteja no formato WAV, o `librosa` é utilizado para carregar o arquivo sem depender do `ffmpeg`.
+```sh
+streamlit run app.py
+```
 
-## Instalação
+## Deployment Without Exposing API Keys
+To keep your OpenAI API key secure, set it as an environment variable instead of hardcoding it:
 
-1. **Clone o Repositório:**
+```sh
+export OPENAI_API_KEY='your_api_key_here'
+```
 
-   ```bash
-   git clone https://github.com/aime-n/audio-tradutor.git
-   cd audio-tradutor
-   ```
+Alternatively, use a secrets manager or `.env` file and load it with `python-dotenv`.
 
-2. **Crie e Ative um Ambiente Virtual (Opcional, mas Recomendado):**
+## Common Issues & Solutions
+### 1. **Transcription Errors Due to Accent (Indian English)**
+**Accuracy: ~70%**
+- The Whisper model captures the general meaning but struggles with certain phrases.
+- Common issues include:
+  - Missing important words (e.g., "less" omitted in "100 square meters less").
+  - Broken sentence structures leading to confusion.
+  - Misinterpreted proper nouns or technical terms.
 
-   ```bash
-   python -m venv venv
-   # Ativação no Linux/Mac:
-   source venv/bin/activate
-   # Ativação no Windows:
-   .\venv\Scripts\activate
-   ```
+**Solution:**
+- Use **Whisper large** for better accuracy.
+- Apply **post-processing** to correct misheard words before translation.
+- If recurring, consider training a custom model on Indian English accents.
 
-3. **Instale as Dependências:**
+### 2. **Translation Issues**
+- Google Translate does well for general text but struggles with:
+  - Business/technical terminology.
+  - Grammatical structure preservation.
+- Example error:
+  - **Incorrect:** "não a citação será feita por scones."
+  - **Correct:** "Não inclua na cotação o que será feito pelo [Scones (?)]."
 
-   ```bash
-   pip install -r requirements.txt
-   ```
+**Solution:**
+- Use **DeepL** for higher translation accuracy.
+- Apply **manual post-editing** for critical documents.
 
-4. **Configuração de Chaves (Opcional):**
+### 3. **FFmpeg Not Found Error**
+If you get:
 
-   Se você estiver utilizando APIs que exigem chave (por exemplo, para o OpenAI), armazene a chave em variáveis de ambiente ou use os "Secrets" do Streamlit Cloud. Certifique-se de não commitar suas chaves sensíveis no repositório.
+```sh
+FileNotFoundError: [Errno 2] No such file or directory: 'ffmpeg'
+```
+Install FFmpeg manually:
 
-## Uso
+```sh
+sudo apt update && sudo apt install ffmpeg
+```
+Or on Windows, install FFmpeg and add it to your system PATH.
 
-1. **Inicie a Aplicação:**
+### 4. **Whisper AttributeError**
+If you encounter:
 
-   ```bash
-   streamlit run app.py
-   ```
+```sh
+AttributeError: module 'whisper' has no attribute 'load_model'
+```
+Ensure you installed the correct package:
 
-2. **Acesse a Interface:**
+```sh
+pip install openai-whisper
+```
 
-   Abra o navegador na URL fornecida pelo Streamlit e siga as instruções:
-   - Arraste e solte um arquivo de áudio ou clique para procurar.
-   - Aguarde o processamento para visualizar a transcrição em inglês e a tradução para o português.
+## Future Improvements
+- **Improve accuracy for Indian accents** using fine-tuning.
+- **Better translation quality** by switching to DeepL.
+- **Add multi-language support** beyond English and Portuguese.
 
-## Implantação Segura
+---
+Developed by Aimê Nobrega.
 
-Para implantar sua aplicação sem expor chaves sensíveis:
-- **Variáveis de Ambiente:** Configure suas chaves (ex: `OPENAI_API_KEY`) em variáveis de ambiente.
-- **Secrets do Streamlit Cloud:** Utilize a funcionalidade de "Secrets" do Streamlit Cloud para gerenciar suas chaves de forma segura.
-- **.env e .gitignore:** Se usar um arquivo `.env`, lembre-se de adicioná-lo ao `.gitignore` para não ser commitado.
-
-## Licença
-
-Este projeto está licenciado sob a licença MIT.
-
-## Contato
-
-Em caso de dúvidas ou sugestões, entre em contato:
-- Email: [aime.nobrega@gmail.com](mailto:aime.nobrega@gmail.com)
