@@ -95,7 +95,7 @@ def main():
             tmp.write(audio_file.read())
             tmp_path = tmp.name
         
-        with st.spinner("Processing audio..."):
+        with st.spinner("Processando audio..."):
             # Load Whisper model
             model = whisper.load_model("base")
             # Transcribe the full audio with improved settings
