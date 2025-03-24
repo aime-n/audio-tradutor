@@ -7,3 +7,4 @@ python-dotenv
 autogen
 torch
 ag2[openai]
+openai
