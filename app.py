@@ -18,13 +18,6 @@ def check_ffmpeg():
     except subprocess.CalledProcessError:
         return False
 
-def extract_text(markdown_text):
-    # Remove '\\boxed{\n```markdown\n' at the beginning and '```}' at the end
-    cleaned_text = re.sub(r'\\boxed{\n```markdown\n', '', markdown_text)
-    cleaned_text = re.sub(r'\boxed{```', '', cleaned_text)
-    cleaned_text = re.sub(r'```}$', '', cleaned_text)
-    cleaned_text = re.sub(r'\n```}\n}', '', cleaned_text)
-    return cleaned_text.strip()
 
 # Carrega configurações do ambiente
 load_dotenv()
@@ -34,7 +27,8 @@ def initialize_agents():
     config_list = [{
         "model": "deepseek/deepseek-r1-zero:free",
         "api_key": os.getenv("OPENROUTER_API_KEY"),
-        "base_url": "https://openrouter.ai/api/v1"
+        "base_url": "https://openrouter.ai/api/v1",
+        "price": [0, 0]
     }]
 
     llm_config = {
@@ -122,9 +116,10 @@ def main():
             # Tradução se necessário
             if detected_lang != 'pt':
                 st.write("🌐 Traduzindo...")
-                translator = Translator()
-                text_obj = translator.translate(transcription, dest='pt')
-                text = text_obj.cr_frame.f_locals['text']['text']
+                text = agents["user_proxy"].initiate_chat(
+                    agents["translator"],
+                    message=f"Traduza este texto para português: {text}"
+                ).chat_history[-1]['content'].strip()
             
             # Melhorar fluidez do texto
             st.write("✒️ Melhorando fluidez do texto...")
