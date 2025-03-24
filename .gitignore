@@ -11,6 +11,7 @@ __pycache__/
 # Ignore IDE-specific files
 .vscode/
 .idea/
+.cache/
 
 # Ignore Streamlit secrets file
 .streamlit/secrets.toml
