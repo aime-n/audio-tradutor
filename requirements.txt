@@ -6,3 +6,4 @@ googletrans
 python-dotenv
 autogen
 torch
+ag2[openai]
