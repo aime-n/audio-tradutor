@@ -123,7 +123,8 @@ def main():
             if detected_lang != 'pt':
                 st.write("🌐 Traduzindo...")
                 translator = Translator()
-                text = translator.translate(transcription, dest='pt').text
+                text_obj = translator.translate(transcription, dest='pt')
+                text = text_obj.cr_frame.f_locals['text']['text']
             
             # Melhorar fluidez do texto
             st.write("✒️ Melhorando fluidez do texto...")
