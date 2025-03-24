@@ -2,4 +2,7 @@ streamlit
 openai-whisper
 torch
 ffmpeg-python
-googletrans==4.0.0-rc1
+googletrans
+python-dotenv
+autogen
+torch
