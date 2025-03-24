@@ -3,12 +3,9 @@ import tempfile
 import whisper
 import ffmpeg
 import os
-import re
 import subprocess
 from dotenv import load_dotenv
 from autogen import AssistantAgent, UserProxyAgent
-from googletrans import Translator
-import re
 
 # Verifica dependências
 def check_ffmpeg():
@@ -18,11 +15,16 @@ def check_ffmpeg():
     except subprocess.CalledProcessError:
         return False
 
-
 # Carrega configurações do ambiente
 load_dotenv()
 
-# Configuração dos Agentes
+# Cache do modelo Whisper
+@st.cache_resource
+def load_whisper_model():
+    return whisper.load_model("base")
+
+# Cache dos agentes
+@st.cache_resource
 def initialize_agents():
     config_list = [{
         "model": "deepseek/deepseek-r1-zero:free",
@@ -100,6 +102,8 @@ def main():
     audio_file = st.file_uploader("Carregar arquivo de áudio", type=["wav", "mp3", "m4a"])
     
     if audio_file:
+        # Carrega o modelo Whisper e os agentes (usando cache)
+        model = load_whisper_model()
         agents = initialize_agents()
         
         with st.status("Processando...", expanded=True) as status:
@@ -109,7 +113,6 @@ def main():
             
             # Transcrição
             st.write("📝 Transcrevendo...")
-            model = whisper.load_model("base")
             transcription = model.transcribe(audio_path)
             text, detected_lang = transcription["text"], transcription["language"]
             
